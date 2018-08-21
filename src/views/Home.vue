@@ -2,19 +2,42 @@
   <v-container fluid>
     <v-slide-y-transition mode="out-in">
       <v-layout column align-center>
-        <img src="@/assets/logo.png" alt="Vuetify.js" class="mb-5">
-        <blockquote>
-          &#8220;First, solve the problem. Then, write the code.&#8221;
-          <footer>
-            <small>
-              <em>&mdash;John Johnson</em>
-            </small>
-          </footer>
-        </blockquote>
+        <v-container grid-list-md>
+        <movie-grid
+          block_title='Popular Movies'
+          api_request='movie/popular'
+          :pagination="false"
+          :limit-results="5"
+          :cards-per-row="5" />
+
+        <movie-grid
+          block_title='Top Rated Movies'
+          api_request='movie/top_rated'
+          :pagination="false"
+          :limit-results="5"
+          :cards-per-row="5" />
+
+        <movie-grid
+          block_title='Now Playing'
+          api_request='movie/now_playing'
+          :cards-per-row="5"
+          :pagination="true" />
+
+        </v-container>
       </v-layout>
     </v-slide-y-transition>
   </v-container>
 </template>
+
+<script>
+import MovieGrid from '../components/MovieGrid.vue';
+
+export default {
+  components: {
+    MovieGrid
+  }
+}
+</script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app dark>
     <v-navigation-drawer
       persistent
       :mini-variant="miniVariant"
@@ -14,6 +14,7 @@
           value="true"
           v-for="(item, i) in items"
           :key="i"
+          :to="item.path"
         >
           <v-list-tile-action>
             <v-icon v-html="item.icon"></v-icon>
@@ -22,6 +23,32 @@
             <v-list-tile-title v-text="item.title"></v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
+
+        <v-list-group
+        prepend-icon="local_movies"
+        value="true"
+      >
+        <v-list-tile slot="activator">
+          <v-list-tile-title>Movies</v-list-tile-title>
+        </v-list-tile>
+
+          <v-list-group
+            no-action
+            sub-group
+          >
+            <v-list-tile slot="activator">
+              <v-list-tile-title>Genres</v-list-tile-title>
+            </v-list-tile>
+
+            <v-list-tile v-if="genres"
+              v-for="genre in genres"
+              :key="genre.id"
+              :to="'/genre/' + helpers.createSlug(genre.name)"
+            >
+              <v-list-tile-title v-text="genre.name"></v-list-tile-title>
+            </v-list-tile>
+          </v-list-group>
+        </v-list-group>
       </v-list>
     </v-navigation-drawer>
     <v-toolbar
@@ -29,40 +56,19 @@
       :clipped-left="clipped"
     >
       <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-      <v-btn icon @click.stop="miniVariant = !miniVariant">
-        <v-icon v-html="miniVariant ? 'chevron_right' : 'chevron_left'"></v-icon>
-      </v-btn>
-      <v-btn icon @click.stop="clipped = !clipped">
-        <v-icon>web</v-icon>
-      </v-btn>
-      <v-btn icon @click.stop="fixed = !fixed">
-        <v-icon>remove</v-icon>
-      </v-btn>
-      <v-toolbar-title v-text="title"></v-toolbar-title>
+      <router-link to="/" class="white--text" style="text-decoration: none;">
+        <v-toolbar-title v-text="title"></v-toolbar-title>
+      </router-link>
       <v-spacer></v-spacer>
-      <v-btn icon @click.stop="rightDrawer = !rightDrawer">
+
+      <!-- <v-btn icon @click.stop="rightDrawer = !rightDrawer">
         <v-icon>menu</v-icon>
-      </v-btn>
+      </v-btn> -->
     </v-toolbar>
     <v-content>
       <router-view/>
     </v-content>
-    <v-navigation-drawer
-      temporary
-      :right="right"
-      v-model="rightDrawer"
-      fixed
-      app
-    >
-      <v-list>
-        <v-list-tile @click="right = !right">
-          <v-list-tile-action>
-            <v-icon>compare_arrows</v-icon>
-          </v-list-tile-action>
-          <v-list-tile-title>Switch drawer (click me)</v-list-tile-title>
-        </v-list-tile>
-      </v-list>
-    </v-navigation-drawer>
+
     <v-footer :fixed="fixed" app>
       <span>&copy; 2017</span>
     </v-footer>
@@ -70,6 +76,7 @@
 </template>
 
 <script>
+import helpers from './helpers.js';
 
 export default {
   name: 'App',
@@ -79,13 +86,38 @@ export default {
       drawer: true,
       fixed: false,
       items: [{
-        icon: 'bubble_chart',
-        title: 'Inspire'
+        icon: 'list',
+        title: 'Home',
+        path: '/'
       }],
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: 'Vuetify.js'
+      title: 'Movies',
+      genres: false,
+      helpers
+    }
+  },
+
+  beforeMount() {
+    this.getGenres();
+  },
+
+  methods: {
+    getGenres() {
+      axios.get(`genre/movie/list`).
+        then((result) => {
+          this.genres = result.data.genres;
+          for(let i=0; i<this.genres.length; i++) {
+            this.genres[i].slug = helpers.createSlug(this.genres[i].name);
+          }
+        })
+    }
+  },
+
+  watch: {
+    genres() {
+      localStorage.setItem('genres', JSON.stringify(this.genres));
     }
   }
 }
