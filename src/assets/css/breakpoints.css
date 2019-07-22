@@ -1,0 +1,6 @@
+@custom-media --phone (min-width: 576px);
+@custom-media --phone-landscape (min-width: 665px) and (max-width: 759px);
+@custom-media --tablet (min-width: 760px);
+@custom-media --desktop (min-width: 992px);
+@custom-media --large-desktop (min-width: 1199.98px);
+@custom-media --turd-browser screen and (-ms-high-contrast: active), screen and (-ms-high-contrast: none);

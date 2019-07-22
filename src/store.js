@@ -5,9 +5,16 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
-  },
-  mutations: {
+    mode: 'browse',
   },
   actions: {
+    changeMode({ commit }, mode) {
+      commit('SET_MODE', mode);
+    },
+  },
+  mutations: {
+    SET_MODE(state, mode) {
+      state.mode = mode;
+    },
   },
 });

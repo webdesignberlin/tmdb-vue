@@ -1,66 +1,40 @@
 <template>
-  <v-flex grid-list-md mt-5>
-    <h2 v-html="block_title" class="mb-3"></h2>
-    <v-layout row wrap v-if="movies">
-      <v-flex
-        v-for="gridMovie in movies"
-        :style="'width: ' + (100 / cardsPerRow ) + '%;'"
-        :key="gridMovie.id"
-      >
-      <router-link :to="'/movie/'+gridMovie.id">
-        <v-card>
-          <v-tooltip top>
-            <v-card-media
-              slot="activator"
-              :src="helpers.poster(gridMovie.poster_path)"
-              style="padding-top: 150%"
-            >
+  <div class="movie-grid">
+    <h2 v-html="block_title"></h2>
+    <div v-if="movies" class="movie-grid__movies">
+      <div v-for="(result, i) in movies" :key="result.id" class="movie-grid__movies__item">
+        <PeopleCard v-if="result.media_type === 'person'" :person="result" :counter="i" />
+        <TVCard v-else-if="result.media_type === 'tv'" :show="result" :counter="i" />
+        <MovieCard v-else :movie="result" :counter="i" />
+      </div>
+    </div>
 
-            </v-card-media>
-            <span v-text="gridMovie.title + ' (' + gridMovie.release_date.slice(0,4) + ')'"></span>
-          </v-tooltip>
-
-          <v-card-actions v-if="showMeta">
-            <v-spacer></v-spacer>
-            <v-btn icon>
-              <v-icon>favorite</v-icon>
-            </v-btn>
-            <v-btn icon>
-              <v-icon>bookmark</v-icon>
-            </v-btn>
-            <!-- <v-btn icon>
-              <v-icon>share</v-icon>
-            </v-btn> -->
-          </v-card-actions>
-        </v-card>
-      </router-link>
-      </v-flex>
-    </v-layout>
-
-    <div class="text-xs-center mt-4" v-if="pagination && results">
-      <v-pagination
-        v-model="page"
-        :length="results.total_pages"
-        :total-visible="7"
-      ></v-pagination>
+    <div class="movie-grid__pagination" v-if="pagination && results">
+      <ul class="movie-grid__pagination__items">
+        <li
+          class="movie-grid__pagination__items__item movie-grid__pagination__items__item--prev"
+          @click="page -= 1"
+        >Prev</li>
+        <li
+          class="movie-grid__pagination__items__item movie-grid__pagination__items__item--next"
+          @click="page += 1"
+        >Next</li>
+      </ul>
     </div>
 
     <div class="text-xs-center" v-if="!movies">
       <Loader />
     </div>
-  </v-flex>
+  </div>
 </template>
 
 <script>
-import helpers from '../helpers.js';
-import Loader from './Loader.vue';
+import { EventBus } from "../event-bus";
+import Loader from "./Loader.vue";
 
 export default {
   props: {
     block_title: {
-      type: String
-    },
-    api_request: {
       type: String
     },
     pagination: {
@@ -77,55 +51,187 @@ export default {
     showMeta: {
       type: Boolean,
       default: true
+    },
+    staticMovies: {
+      type: Array,
+      default: null
     }
   },
+
   data() {
     return {
+      api_request: false,
       page: 1,
+      filterParams: {},
       movies: false,
       results: false,
-      helpers
-    }
+      isNumber
+    };
   },
 
   methods: {
     getMovies: function() {
-      axios.get(this.api_request, {
-        params: {
-          page: this.page
-        }
-      })
-      .then((response) => {
-        this.results = response.data;
+      if (!this.api_request || this.api_request == "") {
+        return false;
+      } else {
+        axios
+          .get(this.api_request, {
+            params: {
+              page: this.page,
+              ...this.filterParams
+            }
+          })
+          .then(response => {
+            if (this.api_request.includes("combined_credits")) {
+              this.results = response.data.cast;
+              this.movies = response.data.cast;
+            } else {
+              this.results = response.data;
+              this.movies = response.data.results;
+            }
 
-        if ( this.limitResults ) {
-          this.movies = response.data.results.slice(0, this.limitResults);
-        } else {
-          this.movies = response.data.results;
-        }
-      });
+            if (typeof this.movies === "object") {
+              let movies = [];
+
+              Object.keys(this.movies).map(key => {
+                movies.push(this.movies[key]);
+              });
+
+              this.movies = movies;
+            }
+
+            if (isNumber(this.limitResults) && typeof this.movies === "array") {
+              // console.log(typeof this.movies)
+              this.movies = this.movies.slice(
+                0,
+                Math.min(this.limitResults, this.movies.length)
+              );
+            }
+
+            this.$emit("movies-loaded", response.data);
+          });
+      }
     }
   },
 
-  beforeMount() {
-    this.getMovies();
+  mounted() {
+    if (this.staticMovies) {
+      this.movies = this.staticMovies;
+    }
+
+    EventBus.$on("MOVIE_GRID:populate-movie-grid", payload => {
+      this.api_request = payload.path;
+      this.page = 1;
+      this.movies = false;
+
+      if (payload.params) {
+        // We want to persist the sort, unless overridden
+        if (!payload.params.sort_by && this.filterParams.sort_by) {
+          payload.params.sort_by = this.filterParams.sort_by;
+        }
+
+        this.filterParams = { ...payload.params };
+      } else {
+        this.filterParams = {};
+      }
+
+      this.getMovies();
+    });
+
+    // Maintains the current api_request but changes the filters
+    EventBus.$on("MOVIE_GRID:filter-movie-grid", payload => {
+      this.page = 1;
+
+      if (payload.params) {
+        // We want to persist the sort, unless overridden
+        if (!payload.params.sort_by && this.filterParams.sort_by) {
+          payload.params.sort_by = this.filterParams.sort_by;
+        }
+
+        // Persist the search term if we're searching
+        if (this.filterParams.query) {
+          payload.params.query = this.filterParams.query;
+        }
+
+        this.filterParams = { ...payload.params };
+
+        this.getMovies();
+      }
+    });
+
+    EventBus.$emit("MOVIE_GRID:ready-for-requests", true);
   },
 
   watch: {
-    page: function(val) {
-      this.getMovies();
-    },
+    // page: function(val) {
+    //   this.getMovies();
+    // },
 
     api_request: function() {
       this.movies = false;
       this.page = 1;
       this.results = false;
-      this.getMovies();
     }
   },
 
   components: {
-    Loader
+    Loader,
+    MovieCard: () => import("./Movie/Card.vue"),
+    PeopleCard: () => import("./People/Card.vue"),
+    TVCard: () => import("./TV/Card.vue")
+  }
+};
+</script>
+
+<style lang="postcss">
+@import "../assets/css/breakpoints.css";
+@import "../assets/css/variables.css";
+
+.movie-grid {
+  &__movies {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-areas: "";
+    grid-gap: 2rem;
+
+    &__item {
+    }
+  }
+
+  &__pagination {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 10;
+
+    &__items {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-radius: 2rem;
+      overflow: hidden;
+      box-shadow: 0 0 4rem rgba(#111, 0.5);
+
+      &__item {
+        background-color: rgba(#111, 0.9);
+        font-weight: 500;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2rem;
+        padding: 1rem 1rem;
+        cursor: pointer;
+
+        &:hover {
+          background-color: rgba(#fff, 0.9);
+          color: #111;
+        }
+
+        &--prev {
+          border-right: 1px solid rgba(#fff, 0.2);
+        }
+      }
+    }
   }
 }
-</script>
+</style>

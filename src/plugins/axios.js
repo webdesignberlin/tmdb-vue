@@ -1,21 +1,26 @@
-"use strict";
+'use strict';
 
 import Vue from 'vue';
-import axios from "axios";
+import axios from 'axios';
 
 // Full config:  https://github.com/axios/axios#request-config
-axios.defaults.baseURL = 'https://api.themoviedb.org/3';
-// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
+// axios.defaults.baseURL = 'https://api.themoviedb.org/3';
+// axios.defaults.headers.common['Authorization'] = `Bearer ${process.env.VUE_APP_TMDB_ACCESS_TOKEN}`;
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 let config = {
+  crossDomain: true,
   baseURL: process.env.VUE_APP_TMDB_BASE_API_URL,
   params: {
-    api_key: process.env.VUE_APP_TBDM_API_KEY,
+    api_key: process.env.VUE_APP_TMDB_API_KEY,
     language: 'en - US',
-    adult: 'false'
-  }
-  // timeout: 60 * 1000, // Timeout
+    adult: 'false',
+  },
+  // headers: {
+  //   'Access-Control-Allow-Headers': 'true',
+  //   'Access-Control-Allow-Origin': '*',
+  // },
+  timeout: 60 * 1000, // Timeout
   // withCredentials: true, // Check cross-site Access-Control
 };
 
@@ -29,7 +34,7 @@ _axios.interceptors.request.use(
   function(error) {
     // Do something with request error
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add a response interceptor
@@ -41,7 +46,7 @@ _axios.interceptors.response.use(
   function(error) {
     // Do something with response error
     return Promise.reject(error);
-  }
+  },
 );
 
 Plugin.install = function(Vue, options) {
@@ -51,16 +56,16 @@ Plugin.install = function(Vue, options) {
     axios: {
       get() {
         return _axios;
-      }
+      },
     },
     $axios: {
       get() {
         return _axios;
-      }
+      },
     },
   });
 };
 
-Vue.use(Plugin)
+Vue.use(Plugin);
 
 export default Plugin;

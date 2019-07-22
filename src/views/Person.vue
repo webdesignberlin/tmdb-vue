@@ -1,65 +1,50 @@
 <template>
-  <div class="movie_backdrop" >
+  <div class="movie_backdrop">
     <v-container grid-list-md>
       <h1 v-if="person" v-html="person.name" class="mb-4 mt-4 display-3 font-weight-thin"></h1>
-      <v-layout row wrap v-if="person">
-        <v-flex xs3>
-          <v-card>
-            <v-tooltip top>
-              <v-card-media
-                slot="activator"
-                :src="helpers.poster(person.profile_path)"
-                height="420px"
-              >
+      <div row wrap v-if="person">
+        <div>
+          <img :src="helpers.poster(person.profile_path)" height="420px" />
 
-              </v-card-media>
-            </v-tooltip>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn icon>
-                <v-icon>favorite</v-icon>
-              </v-btn>
-              <v-btn icon>
-                <v-icon>bookmark</v-icon>
-              </v-btn>
-              <!-- <v-btn icon>
+          <div>
+            <v-spacer></v-spacer>
+            <v-btn icon>
+              <v-icon>favorite</v-icon>
+            </v-btn>
+            <v-btn icon>
+              <v-icon>bookmark</v-icon>
+            </v-btn>
+            <!-- <v-btn icon>
                 <v-icon>share</v-icon>
-              </v-btn> -->
-            </v-card-actions>
-          </v-card>
-        </v-flex>
+            </v-btn>-->
+          </div>
+        </div>
 
         <v-flex xs9 pl-5>
           {{ person.biography }}
-
-
           <v-divider class="mt-3 mb-3"></v-divider>
-
         </v-flex>
-
-      </v-layout>
-      <!-- <movie-grid
-        v-if="movie"
-        block_title='You might also enjoy...'
-        :api_request="'movie/' + movie.id + '/recommendations'"
-        :limitResults="6"
+      </div>
+      <movie-grid
+        v-if="person"
+        block_title="You might also enjoy..."
+        :api_request="'person/' + person.id + '/combined_credits'"
+        :limitResults="1000"
         :cardsPerRow="6"
         :showMeta="false"
-        :pagination="false" /> -->
+        :pagination="false"
+      />
 
-      <div class="text-xs-center" v-if="!person">
+      <div class="text-xs-center" v-else>
         <Loader />
       </div>
-
     </v-container>
   </div>
 </template>
 
 <script>
-import helpers from '../helpers.js';
-import MovieGrid from '../components/MovieGrid.vue';
-import Loader from '../components/Loader.vue';
+import MovieGrid from "../components/MovieGrid.vue";
+import Loader from "../components/Loader.vue";
 
 export default {
   data() {
@@ -67,12 +52,10 @@ export default {
       personId: 0,
       person: false,
       helpers
-    }
+    };
   },
 
-  beforeMount() {
-
-  },
+  beforeMount() {},
 
   mounted() {
     this.personId = this.$route.params.slug;
@@ -81,11 +64,12 @@ export default {
 
   methods: {
     getPerson() {
-      axios.get(`person/${this.personId}`, {
-        params: {
-          'append_to_response': 'movie_credits,images,tagged_images'
-        }
-      })
+      axios
+        .get(`person/${this.personId}`, {
+          params: {
+            append_to_response: "movie_credits,images,tagged_images"
+          }
+        })
         .then(response => {
           this.person = response.data;
         });
@@ -93,7 +77,8 @@ export default {
   },
 
   components: {
-    Loader
+    Loader,
+    MovieGrid
   }
-}
+};
 </script>

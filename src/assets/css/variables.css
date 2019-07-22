@@ -1,0 +1,32 @@
+:root {
+  /* Colors */
+  --color-primary: #ff0571;
+  --color-primary-dark: color(var(--color-primary) shade(60%));
+
+  --color-secondary: #0083d0;
+  --color-secondary-dark: color(var(--color-secondary) shade(50%));
+
+  --color-tertiary: #ff5605;
+  --color-tertiary-dark: color(var(--color-tertiary) shade(50%));
+
+  --color-yellow: #ffa705;
+  --color-red: #901b1b;
+
+  --color-black: #1d1d26;
+  --color-black-darker: #16161d;
+
+  /* Layout */
+  --sidebar-width: 120px;
+  --searchbar-height: 80px;
+  --movie-sidebar-width: 220px;
+
+  /* Animation */
+  --animation-quick-settings: 0.3s ease;
+  --animation-quick: 0.3s;
+  --animation-easing: ease;
+
+  /* Fonts */
+  --font-size-large: 1.2rem;
+  --font-size-small: 0.8rem;
+  --font-size-smaller: 0.7rem;
+}

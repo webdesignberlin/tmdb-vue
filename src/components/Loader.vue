@@ -1,8 +1,14 @@
 <template>
-<v-progress-circular
-        :size="70"
-        :width="7"
-        color="teal"
-        indeterminate
-></v-progress-circular>
+  <div class="loader">Loading...</div>
 </template>
+
+<style scoped>
+@import "../assets/css/variables.css";
+
+.loader {
+  text-transform: uppercase;
+  letter-spacing: 0.15rem;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+}
+</style>

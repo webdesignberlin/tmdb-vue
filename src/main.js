@@ -1,20 +1,21 @@
-import '@babel/polyfill'
+import '@babel/polyfill';
 import Vue from 'vue';
-import './plugins/axios'
-import './plugins/vuetify'
+
+import './plugins/omdb';
+import './plugins/lodashTidbits';
+import './plugins/fontawesome';
+import './plugins/axios';
+
+import './helpers';
+
 import App from './App.vue';
 import router from './router';
 import store from './store';
-import helpers from './helpers';
-
-import isEmpty from 'lodash.isempty';
-window.isEmpty = isEmpty;
 
 Vue.config.productionTip = false;
 
 new Vue({
   router,
   store,
-  helpers,
   render: h => h(App),
 }).$mount('#app');
