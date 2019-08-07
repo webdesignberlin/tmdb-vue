@@ -4,32 +4,65 @@
     <SearchBar />
     <UserMenu />
 
-    <main>
+    <main :class="{ 'blurred' : $store.state.mode === 'search' }">
       <router-view />
     </main>
+
+    <SearchResults />
   </div>
 </template>
 
 <script>
+import { EventBus } from "./event-bus";
+
 export default {
   name: "App",
 
   components: {
     Header: () => import("./components/Header.vue"),
     SearchBar: () => import("./components/SearchBar.vue"),
-    UserMenu: () => import("./components/User/Menu.vue")
+    UserMenu: () => import("./components/User/Menu.vue"),
+    SearchResults: () => import("./components/Search/SearchResults.vue")
   },
 
   data() {
     return {};
+  },
+
+  mounted() {
+    EventBus.$on("GLOBAL:do-search", search => {
+      this.$store.dispatch("changeMode", "search");
+
+      return this.$router.push({
+        name: "home",
+        params: {
+          search: search
+        }
+      });
+    });
   }
 };
 </script>
 
 <style lang="postcss">
-@import "./assets/css/breakpoints.css";
-@import "./assets/css/variables.css";
-@import "./assets/css/forms.css";
+* {
+  box-sizing: border-box;
+
+  &::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: var(--color-black);
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+    background-color: var(--color-black);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    /* border: 2px solid var(--color-primary); */
+  }
+}
 
 html {
   background-color: var(--color-black);
@@ -79,21 +112,28 @@ figure {
     bottom: 0;
     z-index: 1;
     overflow: auto;
-
-    &::-webkit-scrollbar-track {
-      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-      background-color: var(--color-black);
-    }
-
-    &::-webkit-scrollbar {
-      width: 4px;
-      background-color: var(--color-black);
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--color-primary);
-      /* border: 2px solid var(--color-primary); */
-    }
+    transition: filter 1s ease;
+    will-change: filter;
   }
+}
+
+.page {
+  display: flex;
+  align-items: stretch;
+  min-height: 100%;
+
+  &__sidebar {
+    background-color: var(--color-primary-dark);
+    width: var(--movie-sidebar-width);
+  }
+
+  &__content {
+    flex: 1;
+    padding: 2.5rem 4rem;
+  }
+}
+
+.blurred {
+  filter: blur(20px);
 }
 </style>

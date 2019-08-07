@@ -15,6 +15,7 @@ let config = {
     api_key: process.env.VUE_APP_TMDB_API_KEY,
     language: 'en - US',
     adult: 'false',
+    certification_country: 'US',
   },
   // headers: {
   //   'Access-Control-Allow-Headers': 'true',

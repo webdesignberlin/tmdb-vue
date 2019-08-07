@@ -1,27 +1,22 @@
 <template>
   <div class="movie">
-    <div class="movie__backdrop" :style="movieBackdrop" v-if="movie">
+    <div class="movie__backdrop image__backdrop" :style="movieBackdrop" v-if="movie"></div>
+    <div v-if="movie">
       <div class="movie__details">
         <div class="row">
           <div class="movie__details--left">
             <img class="movie__details__poster" :src="poster(movie.poster_path)" />
 
-            <section>
+            <div class="movie__actions">
+              <AddToFavorites :movie="movie" />
+              <AddToWatchlist :movie="movie" />
+            </div>
+
+            <MovieRating :movie="movie" />
+
+            <section v-if="movie.credits.crew && movie.credits.crew.length > 0">
               <h3 class="sectionHeader">Crew</h3>
-              <ul class="castList castList--stacked">
-                <li v-for="(person, i) in movie.credits.crew.slice(0,4)" :key="`${person.id}-${i}`">
-                  <router-link :to="'/person/' + person.id">
-                    <div
-                      class="img"
-                      :style="'background-image: url('+castImg(person.profile_path)+');'"
-                    >&nbsp;</div>
-                    <div class="details">
-                      <strong>{{ person.name }}</strong>
-                      <em v-html="person.job"></em>
-                    </div>
-                  </router-link>
-                </li>
-              </ul>
+              <PersonList stacked :source="getConsolidatedCredits(movie.credits.crew)" :limit="5" />
             </section>
 
             <section v-if="movie.belongs_to_collection">
@@ -48,51 +43,107 @@
               v-html="movie.title + ' (' + movie.release_date.slice(0,4) + ')'"
               class="movie__details__title"
             ></h1>
-            <h3 class="movie__details__director">
+            <h3 v-if="director" class="movie__details__director">
               Directed by
               <span>{{ director }}</span>
             </h3>
+            <h2 class="movie__details__tagline">{{ movie.tagline }}</h2>
 
-            <section>{{ movie.overview }}</section>
+            <section class="movie__details__overview">{{ movie.overview }}</section>
 
-            <section>
-              <ul class="property-list">
-                <li>
-                  <strong>Genres</strong>
-                  <Pills :pills="movie.genres" label-key="name" />
-                </li>
-                <li>
-                  <strong>Keywords</strong>
-                  <Pills :pills="movie.keywords.keywords" label-key="name" />
-                </li>
-                <li>
-                  <strong>Release Date:</strong>
-                  <em>{{ movie.release_date }}</em>
-                </li>
-                <li>
-                  <strong>Vote Average:</strong>
-                  <em>{{ movie.vote_average }} ({{ movie.vote_count }} votes)</em>
-                </li>
-              </ul>
-            </section>
-
-            <div class="movie__details__credits" v-if="movie.credits">
-              <h3 class="sectionHeader">Cast</h3>
-              <ul class="castList">
-                <li v-for="(person, i) in movie.credits.cast.slice(0,8)" :key="`${person.id}-${i}`">
-                  <router-link :to="'/person/' + person.id">
-                    <div
-                      class="img"
-                      :style="'background-image: url('+castImg(person.profile_path)+');'"
-                    >&nbsp;</div>
-                    <div class="details">
-                      <strong>{{ person.name }}</strong>
-                      <em v-html="person.character"></em>
+            <tabs :options="{ useUrlFragment: false }">
+              <tab name="Cast">
+                <div
+                  class="movie__details__credits"
+                  v-if="movie.credits.cast && movie.credits.cast.length > 0"
+                >
+                  <PersonList :source="getConsolidatedCredits(movie.credits.cast)" />
+                </div>
+              </tab>
+              <tab name="Crew">
+                <PersonList :source="getConsolidatedCredits(movie.credits.crew)" />
+              </tab>
+              <tab name="Details">
+                <ul class="property-list">
+                  <li>
+                    <strong>Genres</strong>
+                    <Pills :pills="movie.genres" label-key="name" />
+                  </li>
+                  <li>
+                    <strong>Keywords</strong>
+                    <Pills :pills="movie.keywords.keywords" label-key="name" />
+                  </li>
+                  <li>
+                    <strong>Release Date:</strong>
+                    <em>{{ movie.release_date }}</em>
+                  </li>
+                  <li>
+                    <strong>Vote Average:</strong>
+                    <em>{{ movie.vote_average }} ({{ movie.vote_count }} votes)</em>
+                  </li>
+                  <li>
+                    <strong>Financials:</strong>
+                    <div>
+                      <div>
+                        Budget:
+                        <em>${{ numberWithCommas(movie.budget) }}</em>
+                      </div>
+                      <div>
+                        Revenue:
+                        <em>${{ numberWithCommas(movie.revenue) }}</em>
+                      </div>
+                      <div>
+                        Profit:
+                        <em>${{ numberWithCommas(movie.revenue - movie.budget) }}</em>
+                      </div>
                     </div>
-                  </router-link>
-                </li>
-              </ul>
-            </div>
+                  </li>
+                  <li v-if="movie.alternative_titles.titles.length > 0">
+                    <strong>Also Known As:</strong>
+                    <ul class="alternative-titles">
+                      <li
+                        v-for="(t,i) in movie.alternative_titles.titles"
+                        :key="`movie-title-${i}`"
+                      >
+                        {{ t.title }}
+                        <em>{{ getIso(t.iso_3166_1) }}</em>
+                      </li>
+                    </ul>
+                  </li>
+                  <li v-if="movie.production_companies.length > 0">
+                    <strong>Production Companies:</strong>
+                    <ul class="alternative-titles">
+                      <li
+                        v-for="(t,i) in movie.production_companies"
+                        :key="`movie-production-co-${i}`"
+                      >{{ t.name }}</li>
+                    </ul>
+                  </li>
+                </ul>
+              </tab>
+              <tab name="Reviews">
+                <section v-if="nytimes">
+                  <h3>New York Times</h3>
+                  <ul>
+                    <li v-for="(r, i) in nytimes.results" :key="`review-${i}`">
+                      <strong>{{ r.headline }}</strong>
+                      <em>{{ r.publication_date }}</em>
+                      <p>{{ r.summary_short }}</p>
+                    </li>
+                  </ul>
+                </section>
+              </tab>
+            </tabs>
+
+            <section class="movie__videos" v-if="movie.videos.results">
+              <h3 class="sectionHeader">Videos</h3>
+              <silentbox-single
+                v-for="(v, i) in movie.videos.results"
+                :src="`https://www.youtube.com/watch?v=${v.key}`"
+                :description="v.name"
+                :key="'video-'+i"
+              />
+            </section>
           </div>
         </div>
       </div>
@@ -104,7 +155,7 @@
     <MovieGrid
       v-if="movie && movie.similar.results"
       block_title="You might also enjoy..."
-      :static-movies="movie.similar.results"
+      :staticMovies="movie.similar.results"
       :limitResults="6"
       :cardsPerRow="6"
       :showMeta="false"
@@ -117,13 +168,15 @@
 import Spotify from "spotify-web-api-js";
 import axios2 from "axios";
 import isEmpty from "lodash.isempty";
+import iso from "iso-3166-1";
 
 export default {
   data() {
     return {
       movie: false,
       omdbData: false,
-      spotify: false
+      spotify: false,
+      nytimes: false
     };
   },
 
@@ -143,7 +196,10 @@ export default {
 
     director() {
       const director = this.getDirector(this.movie);
-      return director.name;
+      if (director && "name" in director) {
+        return director.name;
+      }
+      return false;
     }
   },
 
@@ -159,6 +215,7 @@ export default {
         })
         .then(result => {
           this.movie = result.data;
+          this.getNyTimes();
           // this.getIMDB(this.movie.imdb_id)
         });
     },
@@ -173,7 +230,24 @@ export default {
         .then(res => (this.omdbData = res.data));
     },
 
-    getVideos(id) {}
+    getNyTimes() {
+      nytimes
+        .get(null, {
+          params: {
+            query: this.movie.title,
+            "opening-date": this.movie.release_date
+          }
+        })
+        .then(res => {
+          console.log(res);
+          this.nytimes = res.data;
+        });
+    },
+
+    getIso(code) {
+      const details = iso.whereAlpha2(code);
+      return details.country;
+    }
   },
 
   beforeRouteUpdate(to, from, next) {
@@ -192,35 +266,18 @@ export default {
   components: {
     MovieGrid: () => import("../components/MovieGrid.vue"),
     Loader: () => import("../components/Loader.vue"),
-    Pills: () => import("../components/Utility/Pills.vue")
+    Pills: () => import("../components/Utility/Pills.vue"),
+    AddToFavorites: () => import("../components/Movie/AddToFavorites.vue"),
+    AddToWatchlist: () => import("../components/Movie/AddToWatchlist.vue"),
+    MovieRating: () => import("../components/Movie/Rating"),
+    PersonList: () => import("../components/People/List")
   }
 };
 </script>
 
 <style lang="postcss">
-@import "../assets/css/variables.css";
-
 .movie {
-  &__backdrop {
-    background-size: cover;
-    background-position: center center;
-    position: relative;
-
-    &:before {
-      content: "";
-      position: absolute;
-      background: linear-gradient(
-        to bottom,
-        rgba(29, 29, 38, 0.85) 0,
-        rgba(29, 29, 38, 1) 90%
-      );
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      pointer-events: none;
-    }
-  }
+  position: relative;
 
   &__details {
     min-height: 80vh;
@@ -237,6 +294,7 @@ export default {
 
     &--left {
       margin-right: 4rem;
+      width: 300px;
     }
 
     &--right {
@@ -253,20 +311,42 @@ export default {
     }
 
     &__title {
-      font-size: 4rem;
+      font-size: 2.5rem;
       line-height: 1;
+      letter-spacing: -0.15rem;
+      margin: 0;
+    }
+
+    &__tagline {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2rem;
+      margin: 0;
+      font-weight: 800;
     }
 
     &__director {
       font-weight: 200;
-      margin: 1rem 0 2rem;
+      margin: 0 0 2rem;
       font-style: italic;
+      font-size: 0.8rem;
 
       span {
         font-weight: 500;
         font-style: normal;
       }
     }
+
+    &__overview {
+      font-weight: 300;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    margin: 1rem 0;
   }
 
   .row {
@@ -283,44 +363,6 @@ export default {
       &__itemDetails__overview {
         display: none;
       }
-    }
-  }
-}
-
-.property-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--font-size-small);
-
-  & > li {
-    display: flex;
-    align-items: flex-start;
-    padding: 1rem 1rem 0.5rem 1rem;
-    border-radius: 1rem;
-    min-height: 40px;
-
-    & > *:first-child {
-      margin-right: 1rem;
-      min-width: 100px;
-      text-align: right;
-      line-height: 30px;
-    }
-
-    & > em {
-      padding: 0.25rem 0 0 0;
-    }
-
-    &:nth-child(odd) {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .pills__item {
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: capitalize;
     }
   }
 }
@@ -399,6 +441,22 @@ export default {
   padding-bottom: 0.5rem;
   margin: 0 0 0.5rem;
   font-size: var(--font-size-smaller);
+}
+
+.alternative-titles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  em {
+    color: rgba(255, 255, 255, 0.2);
+  }
 }
 </style>
 

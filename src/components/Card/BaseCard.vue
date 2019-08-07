@@ -1,5 +1,66 @@
-@import './variables.css';
+<template>
+  <div class="card card--movie">
+    <router-link :to="`/${slug}/${object.id}`" class="cardLink">
+      <figure class="cardPoster" :style="`background-image: url(${poster(object.poster_path)});`" />
+      <div class="cardDetails">
+        <div class="cardDetails__pad">
+          <h3 class="cardDetails__title">
+            <span v-if="$store.state.mode === 'search'" class="cardDetails__type">[{{ type }}]</span>
+            {{ object.title ? object.title : object.name }}
+          </h3>
+          <div
+            v-if="object.release_date"
+            class="cardDetails__year"
+          >{{ object.release_date.slice(0,4) }}</div>
 
+          <!-- <div class="cardDetails__overview">{{ object.overview }}</div> -->
+        </div>
+      </div>
+    </router-link>
+    <div
+      v-if="showHover"
+      class="cardPopout"
+      :class="{ 'cardPopout--right' : counter === 3 || counter === 4 || counter === 8 || counter === 9 || counter === 13 || counter === 14 || counter === 18 || counter === 19 }"
+    >
+      <div class="cardPopout__pad">
+        <h3>
+          {{ object.title }}
+          <span v-if="object.release_date">({{ object.release_date.slice(0,4) }})</span>
+        </h3>
+        <div class="overview">{{ object.overview }}</div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    type: {
+      type: String,
+      default: "movie"
+    },
+    slug: {
+      type: String,
+      default: "movie"
+    },
+    object: {
+      type: Object,
+      required: true
+    },
+    counter: {
+      type: Number,
+      required: false
+    },
+    showHover: {
+      type: Boolean,
+      default: true
+    }
+  }
+};
+</script>
+
+<style lang="postcss">
 .card {
   position: relative;
   /* overflow: hidden; */
@@ -113,3 +174,4 @@
     }
   }
 }
+</style>

@@ -31,9 +31,7 @@ export default {
 };
 </script>
 
-<style lang="postcss" scoped>
-@import "../../assets/css/variables.css";
-
+<style lang="postcss">
 .pills {
   display: flex;
   list-style: none;

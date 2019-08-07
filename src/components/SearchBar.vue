@@ -28,29 +28,21 @@ export default {
         return this.$store.dispatch("changeMode", "browse");
       }
 
-      this.$store.dispatch("changeMode", "search");
-      return EventBus.$emit("MOVIE_GRID:populate-movie-grid", {
-        path: "search/multi",
-        params: {
-          query: this.searchString
-        }
-      });
+      EventBus.$emit("GLOBAL:do-search", this.searchString);
     }
   }
 };
 </script>
 
 <style lang="postcss" scoped>
-@import "../assets/css/variables.css";
-
 .search-bar {
   background-color: var(--color-black);
   position: fixed;
   width: 100%;
   left: var(--sidebar-width);
   top: 0;
-  z-index: 10;
   box-shadow: 0 0 3rem rgba(var(--color-black), 0.75);
+  z-index: 5;
 
   &__icon {
     position: fixed;

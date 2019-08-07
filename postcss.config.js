@@ -2,9 +2,11 @@ module.exports = {
   plugins: {
     autoprefixer: { grid: true },
     'postcss-import': {},
-    'postcss-preset-env': {},
-    'postcss-color-function': {},
     'postcss-custom-properties': {},
+    'postcss-color-function': {},
+    'postcss-preset-env': {
+      stage: 1,
+    },
     'postcss-inherit': {},
     'postcss-assets': {},
     'postcss-nested': {},

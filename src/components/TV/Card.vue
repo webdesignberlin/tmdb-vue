@@ -48,5 +48,4 @@ export default {
 </script>
 
 <style lang="postcss" scoped>
-@import "../../assets/css/card.css";
 </style>

@@ -11,14 +11,16 @@
 
   --color-yellow: #ffa705;
   --color-red: #901b1b;
+  --color-green: #58901b;
 
+  --color-black-lighter: #2c2c3c;
   --color-black: #1d1d26;
   --color-black-darker: #16161d;
 
   /* Layout */
   --sidebar-width: 120px;
   --searchbar-height: 80px;
-  --movie-sidebar-width: 220px;
+  --movie-sidebar-width: 300px;
 
   /* Animation */
   --animation-quick-settings: 0.3s ease;
@@ -29,4 +31,19 @@
   --font-size-large: 1.2rem;
   --font-size-small: 0.8rem;
   --font-size-smaller: 0.7rem;
+
+  /* Icons */
+  --icon-size-large: 2rem;
+  --icon-size: 1.2rem;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+  will-change: opacity;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
 }

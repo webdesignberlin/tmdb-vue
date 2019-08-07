@@ -42,8 +42,6 @@ export default {};
 </script>
 
 <style lang="postcss" scoped>
-@import "../assets/css/variables.css";
-
 .header {
   position: fixed;
   left: 0;
@@ -51,7 +49,7 @@ export default {};
   width: var(--sidebar-width);
   height: 100%;
   background-color: var(--color-black);
-  z-index: 10;
+  z-index: 5;
 
   span {
     color: white;

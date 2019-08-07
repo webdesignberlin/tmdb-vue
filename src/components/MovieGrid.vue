@@ -3,22 +3,45 @@
     <h2 v-html="block_title"></h2>
     <div v-if="movies" class="movie-grid__movies">
       <div v-for="(result, i) in movies" :key="result.id" class="movie-grid__movies__item">
-        <PeopleCard v-if="result.media_type === 'person'" :person="result" :counter="i" />
-        <TVCard v-else-if="result.media_type === 'tv'" :show="result" :counter="i" />
-        <MovieCard v-else :movie="result" :counter="i" />
+        <Card :showHover="showHover" :object="result" :counter="i" :type="result.media_type" />
       </div>
     </div>
 
-    <div class="movie-grid__pagination" v-if="pagination && results">
+    <div class="movie-grid__pagination" v-if="pagination && movies.length > 0">
       <ul class="movie-grid__pagination__items">
         <li
+          class="movie-grid__pagination__items__item movie-grid__pagination__items__item--first"
+          @click="paginate('first')"
+        >
+          <fa-icon :icon="['fal', 'angle-double-left']" />
+        </li>
+        <li
           class="movie-grid__pagination__items__item movie-grid__pagination__items__item--prev"
-          @click="page -= 1"
-        >Prev</li>
+          @click="paginate('prev')"
+        >
+          <fa-icon :icon="['fal', 'angle-left']" />
+        </li>
+
+        <li
+          class="movie-grid__pagination__items__item movie-grid__pagination__items__item--select"
+          :class="{ 'movie-grid__pagination__items__item--active' : page === p }"
+          v-for="p in pageRange"
+          :key="`page-${p}`"
+          @click="paginate('page', p)"
+        >{{ p }}</li>
+
         <li
           class="movie-grid__pagination__items__item movie-grid__pagination__items__item--next"
-          @click="page += 1"
-        >Next</li>
+          @click="paginate('next')"
+        >
+          <fa-icon :icon="['fal', 'angle-right']" />
+        </li>
+        <li
+          class="movie-grid__pagination__items__item movie-grid__pagination__items__item--last"
+          @click="paginate('last')"
+        >
+          <fa-icon :icon="['fal', 'angle-double-right']" />
+        </li>
       </ul>
     </div>
 
@@ -30,7 +53,6 @@
 
 <script>
 import { EventBus } from "../event-bus";
-import Loader from "./Loader.vue";
 
 export default {
   props: {
@@ -55,67 +77,64 @@ export default {
     staticMovies: {
       type: Array,
       default: null
+    },
+    showHover: {
+      type: Boolean,
+      default: false
+    },
+    results: {
+      type: Object,
+      default: () => {
+        return {};
+      }
+    },
+    page: {
+      type: Number,
+      default: 1
     }
   },
 
   data() {
     return {
       api_request: false,
-      page: 1,
       filterParams: {},
-      movies: false,
-      results: false,
+      movies: [],
       isNumber
     };
   },
 
   methods: {
-    getMovies: function() {
-      if (!this.api_request || this.api_request == "") {
-        return false;
-      } else {
-        axios
-          .get(this.api_request, {
-            params: {
-              page: this.page,
-              ...this.filterParams
-            }
-          })
-          .then(response => {
-            if (this.api_request.includes("combined_credits")) {
-              this.results = response.data.cast;
-              this.movies = response.data.cast;
-            } else {
-              this.results = response.data;
-              this.movies = response.data.results;
-            }
+    paginate(dir, p = false) {
+      return this.$emit("paginate", { direction: dir, page: p });
+    }
+  },
 
-            if (typeof this.movies === "object") {
-              let movies = [];
+  computed: {
+    pageRange() {
+      let pages = [];
+      let start = Math.max(1, this.page - 2);
+      let end = this.page < 3 ? 5 : Math.min(this.totalPages, this.page + 2);
 
-              Object.keys(this.movies).map(key => {
-                movies.push(this.movies[key]);
-              });
-
-              this.movies = movies;
-            }
-
-            if (isNumber(this.limitResults) && typeof this.movies === "array") {
-              // console.log(typeof this.movies)
-              this.movies = this.movies.slice(
-                0,
-                Math.min(this.limitResults, this.movies.length)
-              );
-            }
-
-            this.$emit("movies-loaded", response.data);
-          });
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
       }
+
+      return pages;
+    },
+
+    totalPages() {
+      return Math.min(this.results.total_pages, 1000);
+    }
+  },
+
+  updated() {
+    if (this.staticMovies && this.staticMovies.length > 0) {
+      this.movies = this.staticMovies;
     }
   },
 
   mounted() {
-    if (this.staticMovies) {
+    if (this.staticMovies && this.staticMovies.length > 0) {
       this.movies = this.staticMovies;
     }
 
@@ -135,7 +154,7 @@ export default {
         this.filterParams = {};
       }
 
-      this.getMovies();
+      // this.getMovies();
     });
 
     // Maintains the current api_request but changes the filters
@@ -155,7 +174,7 @@ export default {
 
         this.filterParams = { ...payload.params };
 
-        this.getMovies();
+        // this.getMovies();
       }
     });
 
@@ -163,30 +182,22 @@ export default {
   },
 
   watch: {
-    // page: function(val) {
-    //   this.getMovies();
-    // },
-
-    api_request: function() {
-      this.movies = false;
-      this.page = 1;
-      this.results = false;
+    page: function() {
+      // this.getMovies();
     }
   },
 
   components: {
-    Loader,
+    Loader: () => import("./Loader.vue"),
     MovieCard: () => import("./Movie/Card.vue"),
     PeopleCard: () => import("./People/Card.vue"),
-    TVCard: () => import("./TV/Card.vue")
+    TVCard: () => import("./TV/Card.vue"),
+    Card: () => import("./Card/BaseCard")
   }
 };
 </script>
 
 <style lang="postcss">
-@import "../assets/css/breakpoints.css";
-@import "../assets/css/variables.css";
-
 .movie-grid {
   &__movies {
     display: grid;
@@ -199,36 +210,54 @@ export default {
   }
 
   &__pagination {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
     z-index: 10;
+    margin: 2rem 0;
 
     &__items {
       display: flex;
+      justify-content: center;
+      align-items: stretch;
       list-style: none;
       margin: 0;
       padding: 0;
-      border-radius: 2rem;
       overflow: hidden;
-      box-shadow: 0 0 4rem rgba(#111, 0.5);
 
       &__item {
-        background-color: rgba(#111, 0.9);
+        display: flex;
+        align-items: center;
+        background-color: var(--color-black-darker);
         font-weight: 500;
-        font-size: 0.7rem;
+        font-size: 1.5rem;
         text-transform: uppercase;
         letter-spacing: 0.2rem;
-        padding: 1rem 1rem;
+        padding: 1rem 1.5rem;
         cursor: pointer;
+        border-right: 1px solid var(--color-black-lighter);
+        color: white;
 
-        &:hover {
-          background-color: rgba(#fff, 0.9);
-          color: #111;
+        &:first-child {
+          border-top-left-radius: 2rem;
+          border-bottom-left-radius: 2rem;
         }
 
-        &--prev {
-          border-right: 1px solid rgba(#fff, 0.2);
+        &:last-child {
+          border-top-right-radius: 2rem;
+          border-bottom-right-radius: 2rem;
+          border-right: 0;
+        }
+
+        &:hover {
+          background-color: var(--color-black-lighter);
+        }
+
+        &--active {
+          background-color: var(--color-black-lighter);
+        }
+
+        &--select {
+          letter-spacing: 0;
+          font-size: 1rem;
+          padding: 1rem 1.5rem;
         }
       }
     }

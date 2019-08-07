@@ -1,0 +1,28 @@
+.button {
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+
+  &--invisible {
+    background: transparent;
+    border: 0;
+  }
+
+  &--icon {
+    transition: transform var(--animation-quick-settings);
+    will-change: transform;
+
+    &:hover {
+      transform: scale(1.15);
+      color: var(--color-primary);
+    }
+  }
+
+  &--color {
+    &White {
+      color: white;
+    }
+  }
+}
